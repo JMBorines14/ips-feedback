@@ -24,6 +24,3 @@ class Feedback(Resource):
 
     def delete(self): #delete
         pass
-
-if __name__ == "__main__":
-    app.run(debug = True)
