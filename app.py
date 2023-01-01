@@ -15,12 +15,30 @@ app = Flask(__name__)
 api = Api(app)
 
 def update_database(feedback_id, data, type):
+    global mydb
+
+    cus = mydb.cursor()
+
     if type == 1:
-        pass
+        statement = ""
     elif type == 0:
-        pass
+        statement = ""
     elif type == -1:
-        pass
+        statement = ""
+    else:
+        statement = ""
+
+    cus.execute(statement)
+    mydb.commit()
+
+def read_database(item_id):
+    global mydb
+    cus = mydb.cursor()
+
+    statement = ""
+    cus.execute(statement)
+    
+    result = cus.fetchall()
 
 def process_fields(feedback_id, type: int):
     if not request.data:
@@ -39,10 +57,11 @@ def process_fields(feedback_id, type: int):
             update_database(feedback_id, validated, type)
             return {"resp": 1, "msg": "Success!"}, 201
 
-class Feedback(Resource):
-    def get(self): #read
+class Check(Resource):
+    def get(self, item_id):
         pass
 
+class Feedback(Resource):
     def put(self, feedback_id): #create
         process_fields(feedback_id, 0)
 
@@ -58,5 +77,6 @@ class Testing:
         return {"message": "The server is up and running!"}
 
 api.add_resource(Testing, '/test')
-api.add_resource(Feedback, '/feedback_get/<string:feedback_id>', '/feedback_put/<string:feedback_id>', 
+api.add_resource(Check, '/check/<string:item_id>')
+api.add_resource(Feedback, '/feedback_put/<string:feedback_id>', 
                     'feedback_post/<string:feedback_id>', 'feedback_delete/<string:feedback_id>')
