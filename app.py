@@ -8,6 +8,7 @@ app = Flask(__name__)
 api = Api(app)
 
 def compare_and_check(item_id, student_answer, options, data):
+    """This function compares the student's answer with the different answers/feedbacks for a particular item"""
     is_correct = 0
     feedback = "The answer is incorrect, but we do not know why. You may consult your instructor regarding your answer."
     for i in options:
@@ -20,7 +21,8 @@ def compare_and_check(item_id, student_answer, options, data):
     mydb = mysql.connector.connect(
     host = os.environ["host"],
     user = os.environ["username"],
-    password = os.environ["password"]
+    password = os.environ["password"],
+    database = os.environ["database"]
     )
 
     cus = mydb.cursor()
@@ -44,11 +46,13 @@ def compare_and_check(item_id, student_answer, options, data):
         return to_return
 
 def update_database(feedback_id, data, type):
+    """Updates the feedback entity of the database"""
     #initialize database connection
     mydb = mysql.connector.connect(
     host = os.environ["host"],
     user = os.environ["username"],
-    password = os.environ["password"]
+    password = os.environ["password"],
+    database = os.environ["database"]
     )
 
     cus = mydb.cursor()
@@ -92,7 +96,8 @@ def read_database(item_id, data):
     mydb = mysql.connector.connect(
     host = os.environ["host"],
     user = os.environ["username"],
-    password = os.environ["password"]
+    password = os.environ["password"],
+    database = os.environ["database"]
     )
 
     cus = mydb.cursor()
