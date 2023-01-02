@@ -9,7 +9,6 @@ class Feedback(Schema):
     float_answer = fields.Float(required = True)
 
 class AnswerForChecking(Schema):
-    item_id = fields.Integer(required = True)
     pset_id = fields.Integer(required = True)
     course_id = fields.Integer(required = True)
     student_id = fields.Integer(required = True)

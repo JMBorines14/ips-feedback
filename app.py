@@ -130,7 +130,7 @@ def process_fields(feedback_id, type: int):
         return update_database(feedback_id, validated, type)
 
 class Check(Resource):
-    def get(self, item_id, data):
+    def get(self, item_id):
         if not request.data:
             body  = {}
         else:
