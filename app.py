@@ -1,44 +1,74 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
-from schema import Feedback
+from schema import Feedback, AnswerForChecking
 from marshmallow import ValidationError
 import mysql.connector, os, math, json
-
-#initialize database connection
-mydb = mysql.connector.connect(
-    host = os.environ["host"],
-    user = os.environ["username"],
-    password = os.environ["password"]
-)
 
 app = Flask(__name__)
 api = Api(app)
 
 def update_database(feedback_id, data, type):
-    global mydb
+    #initialize database connection
+    mydb = mysql.connector.connect(
+    host = os.environ["host"],
+    user = os.environ["username"],
+    password = os.environ["password"]
+    )
 
     cus = mydb.cursor()
+    resp = 0
+    msg = ""
+    status_code = 0
 
     if type == 1:
-        statement = ""
+        statement = "UPDATE feedback SET item_id = %s, pset_id = %s, course_id = %s, feedback = %s, is_correct = %s, float_answer = %s WHERE feedback_id = %s"
+        values = (data.item_id, data.pset_id, data.course_id, data.feedback, data.is_correct, data.float_answer, feedback_id)
     elif type == 0:
-        statement = ""
+        statement = "INSERT INTO feedback (item_id, pset_id, course_id, feedback_id, feedback, is_correct, float_answer) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        values = (data.item_id, data.pset_id, data.course_id, feedback_id, data.feedback, data.is_correct, data.float_answer)
     elif type == -1:
-        statement = ""
+        statement = "DELETE FROM feedback WHERE feedback_id = %s"
+        values = (feedback_id)
     else:
-        statement = ""
+        return {'resp': 0, 'error': 'Invalid type'}, 400
 
-    cus.execute(statement)
-    mydb.commit()
+    try:
+        cus.execute(statement, values)
+        mydb.commit()
+        resp = 1
+        msg = "Success!"
+        status_code = 200
+    except mysql.connector.Error as e:
+        msg = e.msg
+        status_code = 400
+    except:
+        msg = "Something else went wrong"
+        status_code = 400
+    finally:
+        if mydb.is_connected():
+            cus.close()
+            mydb.close()
 
-def read_database(item_id):
-    global mydb
+        return {'resp': resp, 'message': msg}, status_code
+
+def read_database(item_id, data):
+    mydb = mysql.connector.connect(
+    host = os.environ["host"],
+    user = os.environ["username"],
+    password = os.environ["password"]
+    )
+
     cus = mydb.cursor()
 
-    statement = ""
-    cus.execute(statement)
+    statement = "SELECT float_answer, feedback, is_correct FROM feedback WHERE item_id = %s"
+    value = (item_id)
+    cus.execute(statement, value)
     
     result = cus.fetchall()
+    student_answer = data.float_answer
+
+    #check and return
+
 
 def process_fields(feedback_id, type: int):
     if not request.data:
@@ -49,17 +79,29 @@ def process_fields(feedback_id, type: int):
         except json.JSONDecodeError as e:
             return {"resp": 0, "error": e.msg}, 400
         
-        try:
-            validated = Feedback().load(body)
-        except ValidationError as e:
-            return {"resp": 0, "error": e.msg}, 400
-        else:
-            update_database(feedback_id, validated, type)
-            return {"resp": 1, "msg": "Success!"}, 201
+    try:
+        validated = Feedback().load(body)
+    except ValidationError as e:
+        return {"resp": 0, "error": e.msg}, 400
+    else:
+        return update_database(feedback_id, validated, type)
 
 class Check(Resource):
-    def get(self, item_id):
-        pass
+    def get(self, item_id, data):
+        if not request.data:
+            body  = {}
+        else:
+            try:
+                body = json.loads(request.data)
+            except json.JSONDecodeError as e:
+                return {'resp': 0, 'error': e.msg}, 400
+        
+        try:
+            validated = AnswerForChecking().load(body)
+        except ValidationError as e:
+            return {'resp': 0, 'error': e.msg}, 400
+        else:
+            return read_database(item_id, validated)
 
 class Feedback(Resource):
     def put(self, feedback_id): #create
