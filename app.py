@@ -159,7 +159,7 @@ class Feedback(Resource):
     def delete(self, feedback_id): #delete
         process_fields(feedback_id, -1)
 
-class Testing:
+class Testing(Resource):
     def get(self):
         """Added API for testing if the server is running"""
         return {"message": "The server is up and running!"}
@@ -167,4 +167,4 @@ class Testing:
 api.add_resource(Testing, '/test')
 api.add_resource(Check, '/check/<string:item_id>')
 api.add_resource(Feedback, '/feedback_put/<string:feedback_id>', 
-                    'feedback_post/<string:feedback_id>', 'feedback_delete/<string:feedback_id>')
+                    '/feedback_post/<string:feedback_id>', '/feedback_delete/<string:feedback_id>')
