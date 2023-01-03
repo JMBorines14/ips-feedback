@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
-from schema import Feedback, AnswerForChecking
+from schema import PSFeedback, AnswerForChecking
 from marshmallow import ValidationError
 import mysql.connector, os, math, json
 
@@ -126,7 +126,7 @@ def process_fields(feedback_id, type: int):
             return {"resp": 0, "error": e.msg}, 400
         
     try:
-        validated = Feedback().load(body)
+        validated = PSFeedback().load(body)
     except ValidationError as e:
         return {"resp": 0, "error": e.msg}, 400
     else:
