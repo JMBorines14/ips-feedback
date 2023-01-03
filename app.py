@@ -20,6 +20,7 @@ def compare_and_check(item_id, student_answer, options, data):
     #add entry to database
     mydb = mysql.connector.connect(
     host = os.environ["host"],
+    port = os.environ["port"],
     user = os.environ["username"],
     password = os.environ["password"],
     database = os.environ["database"]
@@ -50,6 +51,7 @@ def update_database(feedback_id, data, type):
     #initialize database connection
     mydb = mysql.connector.connect(
     host = os.environ["host"],
+    port = os.environ["port"],
     user = os.environ["username"],
     password = os.environ["password"],
     database = os.environ["database"]
@@ -95,6 +97,7 @@ def update_database(feedback_id, data, type):
 def read_database(item_id, data):
     mydb = mysql.connector.connect(
     host = os.environ["host"],
+    port = os.environ["port"],
     user = os.environ["username"],
     password = os.environ["password"],
     database = os.environ["database"]

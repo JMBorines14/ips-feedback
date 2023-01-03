@@ -1,6 +1,7 @@
 FROM python:3.10-slim-buster
 
 ENV host=value
+ENV port=3306
 ENV username=value
 ENV password=value
 ENV database=value
