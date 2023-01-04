@@ -3,6 +3,7 @@ from flask_restful import Api, Resource
 from schema import PSFeedback, AnswerForChecking
 from marshmallow import ValidationError
 import mysql.connector, os, math, json
+import openai
 
 app = Flask(__name__)
 api = Api(app)
@@ -132,6 +133,16 @@ def process_fields(feedback_id, type: int):
     else:
         return update_database(feedback_id, validated, type)
 
+def summarize_prompt(text):
+    return """Summarize the following essay to a 5th grader reading level: {}""".format(
+        text.capitalize()
+    )
+
+def codecheck_prompt(code):
+    return """Describe the function of the following code and determing any errors or inefficies: {}""".format(
+        code.capitalize()
+    )
+
 class Check(Resource):
     def get(self, item_id):
         if not request.data:
@@ -159,6 +170,28 @@ class Feedback(Resource):
     def delete(self, feedback_id): #delete
         process_fields(feedback_id, -1)
 
+class SummarizeEssay(Resource):
+    def post(self):
+        body = json.loads(request.data)
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            max_tokens=100,
+            prompt=summarize_prompt(body["essay"]),
+            temperature=0.6,
+        )
+        return response
+
+class CheckCode(Resource):
+    def post(self):
+        body = json.loads(request.data)
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            max_tokens=500,
+            prompt=codecheck_prompt(body["code"]),
+            temperature=0.6,
+        )
+        return response
+
 class Testing(Resource):
     def get(self):
         """Added API for testing if the server is running"""
@@ -168,3 +201,5 @@ api.add_resource(Testing, '/test')
 api.add_resource(Check, '/check/<string:item_id>')
 api.add_resource(Feedback, '/feedback_put/<string:feedback_id>', 
                     '/feedback_post/<string:feedback_id>', '/feedback_delete/<string:feedback_id>')
+api.add_resource(SummarizeEssay, '/summarize')
+api.add_resource(CheckCode, '/codecheck')
