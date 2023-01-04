@@ -3,9 +3,15 @@ from flask_restful import Api, Resource
 from schema import PSFeedback, AnswerForChecking
 from marshmallow import ValidationError
 import mysql.connector, os, math, json
+import os
+
+import openai
+import sys
+from flask import Flask, redirect, render_template, request, url_for
 
 app = Flask(__name__)
 api = Api(app)
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def compare_and_check(item_id, student_answer, options, data):
     """This function compares the student's answer with the different answers/feedbacks for a particular item"""
@@ -131,6 +137,55 @@ def process_fields(feedback_id, type: int):
         return {"resp": 0, "error": e.msg}, 400
     else:
         return update_database(feedback_id, validated, type)
+
+
+@app.route("/summarize", methods=("GET", "POST"))
+def summarize():
+    if request.method == "POST":
+        #essay = request.form["essay"]
+        essay = request.args.get("essay")
+        if essay == None:
+            essay = request.form["essay"]
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            max_tokens=100,
+            prompt=summarize_prompt(essay),
+            temperature=0.6,
+        )
+        return response
+        #return redirect(url_for("summarize", result=response.choices[0].text))
+
+    result = request.args.get("result")
+    return render_template("summarizer.html", result=result)
+
+@app.route("/codecheck", methods=("GET", "POST"))
+def codecheck():
+    if request.method == "POST":
+        code = request.args.get("code")
+        if code == None:
+            code = request.form["code"]
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            max_tokens=500,
+            prompt=codecheck_prompt(code),
+            temperature=0.6,
+        )
+        return response
+
+    result = request.args.get("result")
+    return render_template("codechecker.html", result=result)
+
+
+def summarize_prompt(text):
+    return """Summarize the following essay to a 5th grader reading level: {}""".format(
+        text.capitalize()
+    )
+
+def codecheck_prompt(code):
+    return """Describe the function of the following code and determing any errors or inefficies: {}""".format(
+        code.capitalize()
+    )
+
 
 class Check(Resource):
     def get(self, item_id):
