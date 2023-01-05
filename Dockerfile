@@ -1,10 +1,10 @@
 FROM python:3.10-slim-buster
 
-ENV host=localhost
+ENV host=172.17.0.3
 ENV port=3306
 ENV username=root
-ENV password=password
-ENV database=engg150_test
+ENV password=baeldung
+ENV database=intearactivepsetDB
 
 COPY ./requirements.txt ./requirements.txt
 
