@@ -129,7 +129,7 @@ def process_fields(feedback_id, type: int):
     try:
         validated = PSFeedback().load(body)
     except ValidationError as e:
-        return {"resp": 0, "error": e.msg}, 400
+        return {"resp": 0, "error": "Validation failed!"}, 400
     else:
         return update_database(feedback_id, validated, type)
 
@@ -156,19 +156,19 @@ class Check(Resource):
         try:
             validated = AnswerForChecking().load(body)
         except ValidationError as e:
-            return {'resp': 0, 'error': e.msg}, 400
+            return {'resp': 0, 'error': "Validation error"}, 400
         else:
             return read_database(item_id, validated)
 
 class Feedback(Resource):
     def put(self, feedback_id): #create
-        process_fields(feedback_id, 0)
+        return process_fields(feedback_id, 0)
 
     def post(self, feedback_id): #update
-        process_fields(feedback_id, 1)
+        return process_fields(feedback_id, 1)
 
     def delete(self, feedback_id): #delete
-        process_fields(feedback_id, -1)
+        return update_database(feedback_id, {}, -1)
 
 class SummarizeEssay(Resource):
     def post(self):
