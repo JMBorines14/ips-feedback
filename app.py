@@ -71,7 +71,7 @@ def update_database(feedback_id, data, type):
         values = (data["item_id"], data["pset_id"], data["course_id"], feedback_id, data["feedback"], data["is_correct"], data["float_answer"])
     elif type == -1:
         statement = "DELETE FROM feedback WHERE feedback_id = %s"
-        values = (feedback_id)
+        values = (feedback_id,)
     else:
         statement = ""
         values = ()
