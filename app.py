@@ -13,7 +13,7 @@ def compare_and_check(item_id, student_answer, options, data):
     is_correct = 0
     feedback = "The answer is incorrect, but we do not know why. You may consult your instructor regarding your answer."
     for i in options:
-        if math.isclose(student_answer, i[0], abs_tol = data.tolerance):
+        if math.isclose(student_answer, i[0], abs_tol = data["tolerance"]):
             is_correct = i[2]
             feedback = i[1]
             break
@@ -32,7 +32,7 @@ def compare_and_check(item_id, student_answer, options, data):
 
     try:
         statement = "INSERT INTO attempt (item_id, pset_id, course_id, student_id, attempt_id, student_feedback, is_correct, float_answer, submit_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = (item_id, data.pset_id, data.course_id, data.student_id, data.attempt_id, feedback, is_correct, student_answer, data.submit_date)
+        values = (item_id, data["pset_id"], data["course_id"], data["student_id"], data["attempt_id"], feedback, is_correct, student_answer, data["submit_date"])
         cus.execute(statement, values)
         mydb.commit()
         to_return = {'resp': 1, 'is_correct': is_correct, 'feedback': feedback}, 200
@@ -65,10 +65,10 @@ def update_database(feedback_id, data, type):
 
     if type == 1:
         statement = "UPDATE feedback SET item_id = %s, pset_id = %s, course_id = %s, feedback = %s, is_correct = %s, float_answer = %s WHERE feedback_id = %s"
-        values = (data.item_id, data.pset_id, data.course_id, data.feedback, data.is_correct, data.float_answer, feedback_id)
+        values = (data["item_id"], data["pset_id"], data["course_id"], data["feedback"], data["is_correct"], data["float_answer"], feedback_id)
     elif type == 0:
         statement = "INSERT INTO feedback (item_id, pset_id, course_id, feedback_id, feedback, is_correct, float_answer) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        values = (data.item_id, data.pset_id, data.course_id, feedback_id, data.feedback, data.is_correct, data.float_answer)
+        values = (data["item_id"], data["pset_id"], data["course_id"], feedback_id, data["feedback"], data["is_correct"], data["float_answer"])
     elif type == -1:
         statement = "DELETE FROM feedback WHERE feedback_id = %s"
         values = (feedback_id)
@@ -111,7 +111,7 @@ def read_database(item_id, data):
         value = (item_id)
         cus.execute(statement, value)
         result = cus.fetchall()
-        return compare_and_check(item_id, data.float_answer, result, data)
+        return compare_and_check(item_id, data["float_answer"], result, data)
     except mysql.connector.Error as e:
         return {'resp': 0, 'message': e.msg}, 400
     except:
