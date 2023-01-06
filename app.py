@@ -28,10 +28,12 @@ def inquire(id, type):
         cus.execute(statement, value)
         result = cus.fetchall()
 
-        if len(result) >= 1:
-            return 0
-        else:
+        if len(result) > 1:
+            return 2
+        elif len(result) == 1:
             return 1
+        else:
+            return 0
     except:
         return -1
 
@@ -55,7 +57,7 @@ def compare_and_check(item_id, student_answer, options, data):
     )
 
     checker = inquire(data["attempt_id"], 0)
-    if checker == 0:
+    if checker == 1:
         return {'resp': 0, 'message': 'Entry exists in the database'}, 200
     elif checker == -1:
         return {'resp': 0, 'message': 'Verification from database is not working'}, 500
@@ -97,18 +99,22 @@ def update_database(feedback_id, data, type):
     status_code = 400
 
     checker = inquire(feedback_id, 1)
-    if checker == 0:
-        return {'resp': resp, 'message': 'Entry exists in the database'}, 200
-    elif checker == -1:
+    if checker == -1:
         return {'resp': resp, 'message': 'Verification from database is not working'}, 500
 
-    if type == 1:
+    if type == 1: #update
+        if checker == 0:
+            return {'resp': resp, 'message': 'Entry does not exist in the database'}, 404  
         statement = "UPDATE feedback SET item_id = %s, pset_id = %s, course_id = %s, feedback = %s, is_correct = %s, float_answer = %s WHERE feedback_id = %s"
         values = (data["item_id"], data["pset_id"], data["course_id"], data["feedback"], data["is_correct"], data["float_answer"], feedback_id)
-    elif type == 0:
+    elif type == 0: #insert
+        if checker == 1:
+            return {'resp': resp, 'message': 'Entry exists in the database'}, 200   
         statement = "INSERT INTO feedback (item_id, pset_id, course_id, feedback_id, feedback, is_correct, float_answer) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         values = (data["item_id"], data["pset_id"], data["course_id"], feedback_id, data["feedback"], data["is_correct"], data["float_answer"])
     elif type == -1:
+        if checker == 0:
+            return {'resp': resp, 'message': 'Entry does not exist in the database'}, 404  
         statement = "DELETE FROM feedback WHERE feedback_id = %s"
         values = (feedback_id,)
     else:
@@ -151,7 +157,7 @@ def read_database(item_id, data):
         cus.execute(statement, value)
         result = cus.fetchall()
 
-        if len(result) > 1:
+        if len(result) >= 1:
             return compare_and_check(item_id, data["float_answer"], result, data)
         else:
             return {'resp': 0, 'message': 'Item does not exist'}, 404
