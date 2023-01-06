@@ -14,4 +14,4 @@ class AnswerForChecking(Schema):
     student_id = fields.Integer(required = True)
     attempt_id = fields.Integer(required = True)
     float_answer = fields.Float(required = True)
-    submit_date = fields.DateTime(required = True) #double check formatting
+    submit_date = fields.Integer(required = True) #double check formatting

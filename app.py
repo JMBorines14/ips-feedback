@@ -47,6 +47,32 @@ def compare_and_check(item_id, student_answer, options, data):
         
         return to_return
 
+def inquire(feedback_id):
+    mydb = mysql.connector.connect(
+        host = os.environ["host"],
+        port = os.environ["port"],
+        user = os.environ["username"],
+        password = os.environ["password"],
+        database = os.environ["database"]
+    )
+
+    cus = mydb.cursor()
+
+    try:
+        statement = "SELECT * FROM feedback WHERE feedback_id = %s"
+        value = (feedback_id,)
+        cus.execute(statement, value)
+        result = cus.fetchall()
+
+        if len(result) > 1:
+            return 0
+        else:
+            return 1
+    except mysql.connector.Error as e:
+        return -1
+    except:
+        return -1
+
 def update_database(feedback_id, data, type):
     """Updates the feedback entity of the database"""
     #initialize database connection
@@ -62,6 +88,12 @@ def update_database(feedback_id, data, type):
     resp = 0
     msg = ""
     status_code = 400
+
+    checker = inquire(feedback_id)
+    if checker == 1:
+        return {'resp': resp, 'message': 'Entry exists in the database'}, 200
+    elif checker == -1:
+        return {'resp': resp, 'message': 'Verification from database is not working'}, 500
 
     if type == 1:
         statement = "UPDATE feedback SET item_id = %s, pset_id = %s, course_id = %s, feedback = %s, is_correct = %s, float_answer = %s WHERE feedback_id = %s"
@@ -108,10 +140,14 @@ def read_database(item_id, data):
 
     try:
         statement = "SELECT float_answer, feedback, is_correct FROM feedback WHERE item_id = %s"
-        value = (item_id)
+        value = (item_id,)
         cus.execute(statement, value)
         result = cus.fetchall()
-        return compare_and_check(item_id, data["float_answer"], result, data)
+
+        if len(result) > 1:
+            return compare_and_check(item_id, data["float_answer"], result, data)
+        else:
+            return {'resp': 0, 'message': 'Item does not exist'}, 400
     except mysql.connector.Error as e:
         return {'resp': 0, 'message': e.msg}, 400
     except:
