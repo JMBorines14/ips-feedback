@@ -8,6 +8,33 @@ import openai
 app = Flask(__name__)
 api = Api(app)
 
+def inquire(id, type):
+    mydb = mysql.connector.connect(
+        host = os.environ["host"],
+        port = os.environ["port"],
+        user = os.environ["username"],
+        password = os.environ["password"],
+        database = os.environ["database"]
+    )
+
+    cus = mydb.cursor()
+
+    try:
+        if type == 1:
+            statement = "SELECT * FROM feedback WHERE feedback_id = %s"
+        else:
+            statement = "SELECT * FROM attempt WHERE attempt_id = %s"
+        value = (id,)
+        cus.execute(statement, value)
+        result = cus.fetchall()
+
+        if len(result) >= 1:
+            return 0
+        else:
+            return 1
+    except:
+        return -1
+
 def compare_and_check(item_id, student_answer, options, data):
     """This function compares the student's answer with the different answers/feedbacks for a particular item"""
     is_correct = 0
@@ -27,6 +54,12 @@ def compare_and_check(item_id, student_answer, options, data):
     database = os.environ["database"]
     )
 
+    checker = inquire(data["attempt_id"], 0)
+    if checker == 0:
+        return {'resp': 0, 'message': 'Entry exists in the database'}, 200
+    elif checker == -1:
+        return {'resp': 0, 'message': 'Verification from database is not working'}, 500
+    
     cus = mydb.cursor()
     to_return = {}, 0
 
@@ -37,41 +70,15 @@ def compare_and_check(item_id, student_answer, options, data):
         mydb.commit()
         to_return = {'resp': 1, 'is_correct': is_correct, 'feedback': feedback}, 200
     except mysql.connector.Error as e:
-        to_return = {'resp': 0, 'message': e.msg}, 400
+        to_return = {'resp': 0, 'message': e.msg}, 500
     except:
-        to_return = {'resp': 0,'message': 'Something is wrong'}, 400
+        to_return = {'resp': 0,'message': 'Something is wrong'}, 500
     finally:
         if mydb.is_connected():
             cus.close()
             mydb.close()
         
         return to_return
-
-def inquire(feedback_id):
-    mydb = mysql.connector.connect(
-        host = os.environ["host"],
-        port = os.environ["port"],
-        user = os.environ["username"],
-        password = os.environ["password"],
-        database = os.environ["database"]
-    )
-
-    cus = mydb.cursor()
-
-    try:
-        statement = "SELECT * FROM feedback WHERE feedback_id = %s"
-        value = (feedback_id,)
-        cus.execute(statement, value)
-        result = cus.fetchall()
-
-        if len(result) > 1:
-            return 0
-        else:
-            return 1
-    except mysql.connector.Error as e:
-        return -1
-    except:
-        return -1
 
 def update_database(feedback_id, data, type):
     """Updates the feedback entity of the database"""
@@ -89,8 +96,8 @@ def update_database(feedback_id, data, type):
     msg = ""
     status_code = 400
 
-    checker = inquire(feedback_id)
-    if checker == 1:
+    checker = inquire(feedback_id, 1)
+    if checker == 0:
         return {'resp': resp, 'message': 'Entry exists in the database'}, 200
     elif checker == -1:
         return {'resp': resp, 'message': 'Verification from database is not working'}, 500
@@ -116,10 +123,10 @@ def update_database(feedback_id, data, type):
         status_code = 200
     except mysql.connector.Error as e:
         msg = e.msg
-        status_code = 400
+        status_code = 500
     except:
         msg = "Something else went wrong"
-        status_code = 400
+        status_code = 500
     finally:
         if mydb.is_connected():
             cus.close()
@@ -147,9 +154,9 @@ def read_database(item_id, data):
         if len(result) > 1:
             return compare_and_check(item_id, data["float_answer"], result, data)
         else:
-            return {'resp': 0, 'message': 'Item does not exist'}, 400
+            return {'resp': 0, 'message': 'Item does not exist'}, 404
     except mysql.connector.Error as e:
-        return {'resp': 0, 'message': e.msg}, 400
+        return {'resp': 0, 'message': e.msg}, 500
     except:
         return {'resp': 0, 'message': 'Something is wrong with the server'}, 500
     
