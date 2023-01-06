@@ -37,23 +37,58 @@ def inquire(id, type):
     except:
         return -1
 
-def compare_and_check(item_id, student_answer, options, data):
-    """This function compares the student's answer with the different answers/feedbacks for a particular item"""
-    is_correct = 0
-    feedback = "The answer is incorrect, but we do not know why. You may consult your instructor regarding your answer."
-    for i in options:
-        if math.isclose(student_answer, i[0], abs_tol = data["tolerance"]):
-            is_correct = i[2]
-            feedback = i[1]
-            break
-    
-    #add entry to database
+def inquire_tolerance(pset_id):
     mydb = mysql.connector.connect(
     host = os.environ["host"],
     port = os.environ["port"],
     user = os.environ["username"],
     password = os.environ["password"],
     database = os.environ["database"]
+    )
+
+    cus = mydb.cursor()
+    to_return = -1
+    try:
+        statement = "SELECT float_tolerance FROM pset WHERE pset_id = %s"
+        value = (pset_id,)
+        cus.execute(statement, value)
+        
+        result = cus.fetchone()
+        if result == None:
+            to_return = -1
+        else:
+            to_return = result[0]
+    except:
+        to_return = -1
+    finally:
+        if mydb.is_connected():
+            cus.close()
+            mydb.close()
+        
+        return to_return
+
+def compare_and_check(item_id, student_answer, options, data):
+    """This function compares the student's answer with the different answers/feedbacks for a particular item"""
+    is_correct = 0
+    feedback = "The answer is incorrect, but we do not know why. You may consult your instructor regarding your answer."
+
+    tolerance = inquire_tolerance(data["pset_id"])
+    if tolerance < 0:
+        return {'resp': 0, 'message': 'Tolerance level was not retrieved successfully'}, 500
+
+    for i in options:
+        if math.isclose(student_answer, float(i[0]), abs_tol = float(tolerance)):
+            is_correct = i[2]
+            feedback = i[1]
+            break
+    
+    #add entry to database
+    mydb = mysql.connector.connect(
+        host = os.environ["host"],
+        port = os.environ["port"],
+        user = os.environ["username"],
+        password = os.environ["password"],
+        database = os.environ["database"]
     )
 
     checker = inquire(data["attempt_id"], 0)
@@ -142,11 +177,11 @@ def update_database(feedback_id, data, type):
 
 def read_database(item_id, data):
     mydb = mysql.connector.connect(
-    host = os.environ["host"],
-    port = os.environ["port"],
-    user = os.environ["username"],
-    password = os.environ["password"],
-    database = os.environ["database"]
+        host = os.environ["host"],
+        port = os.environ["port"],
+        user = os.environ["username"],
+        password = os.environ["password"],
+        database = os.environ["database"]
     )
 
     cus = mydb.cursor()
